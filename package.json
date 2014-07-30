@@ -1,0 +1,31 @@
+{
+  "author": "Konstantin Burykin <burkostya@gmail.com>",
+  "name": "cocanode-client",
+  "description": "Wrapper around cocaine-framework-nodejs for working to services as client",
+  "version": "0.0.1",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha"
+  },
+  "homepage": "http://github.com/burkostya/cocanode-client",
+  "repository": "git://github.com:burkostya/cocanode-client.git",
+  "bugs": "http://github.com/burkostya/cocanode-client/issues",
+  "main": "index.js",
+  "engines": {
+    "node": ">= 0.10.21"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "devDependencies": {
+    "mocha": "~1.14.0",
+    "chai": "~1.8.1"
+  },
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "cocaine": "~0.4.1",
+    "debug": "~1.0.4",
+    "msgpack": "~0.2.3"
+  }
+}
