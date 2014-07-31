@@ -3,6 +3,9 @@ var debug = require('debug')('cocanode-client');
 var mp            = require('msgpack');
 var CocaineClient = require('cocaine').Client;
 
+var makeMessage    = require('./lib/message.js');
+var ResponseStream = require('./lib/response-stream.js');
+
 /**
  * Constructor
  * @param {String} options.hostname Hostname of cocaine
@@ -57,6 +60,8 @@ var Client = function (options) {
   this.options = options;
 
   this._isConnected = false;
+  this._isConnecting = false;
+  this._onConnectCallbacks = [];
 
 };
 
@@ -70,16 +75,30 @@ var Client = function (options) {
 Client.prototype.invoke = function (method, message, done) {
   var self = this;
 
-  if (!self._isConnected) {
-    debug('Connecting to cocaine from invoke');
-    self._connect(function onConnectFromInvoke (err) {
-      if (err) { return done(err); }
-      debug('Connected to cocaine from invoke');
-      self._invoke(method, message, done);
-    });
-  } else {
+  debug('Connecting to cocaine from invoke');
+  self._connect(function onConnectFromInvoke (err) {
+    if (err) { return done(err); }
+    debug('Connected to cocaine from invoke');
     self._invoke(method, message, done);
-  }
+  });
+};
+
+/**
+ * Invokes remote method with message and streams response
+ * @param  {String}                      method   Method name
+ * @param  {String|Buffer|Number|Object} message  Message
+ * @return {Stream} steam Response stream with data from service
+ */
+Client.prototype.responseStream = function (method, message) {
+  if (!method)  { throw new Error('Method must be defined'); }
+  if (!message) { throw new Error('Message must be defined'); }
+
+  debug('Creating response stream');
+  return new ResponseStream({
+    client:  this,
+    method:  method,
+    message: message
+  });
 };
 
 /**
@@ -93,15 +112,7 @@ Client.prototype.invoke = function (method, message, done) {
 Client.prototype._invoke = function (method, message, done) {
   debug('Invoking method `' + method + '`');
 
-  var msg = mp.pack([
-    'GET',
-    '/',
-    'HTTP/1.1',
-    [  //headers
-      ['cocanode-message', message]
-    ],
-    '' // body
-  ]);
+  var msg = makeMessage(message);
 
   var cocaineService = this._cocaineService;
   var cocaineSession = cocaineService.enqueue(method, msg);
@@ -150,15 +161,36 @@ Client.prototype._invoke = function (method, message, done) {
 Client.prototype._connect = function (done) {
   var self = this;
 
+  if (self._isConnected) {
+    return done();
+  }
+
+  // collect all connect calbacks
+  self._onConnectCallbacks.push(done);
+
+  if (self._isConnecting) { return; }
+
+  self._isConnecting = true;
+
   var cocaineService = self._cocaineService;
 
-  function onCocaineServiceError (err) { return done(err); }
+  function onCocaineServiceError (err) {
+    self._isConnecting = false;
+    // release all connect callbacks with error
+    self._onConnectCallbacks.forEach(function (cb) {
+      cb(err);
+    });
+  }
   cocaineService.once('error', onCocaineServiceError);
 
   cocaineService.once('connect', function onCocaineServiceConnect () {
     self._isConnected = true;
+    self._isConnecting = false;
     cocaineService.removeListener('error', onCocaineServiceError);
-    done();
+    // release all connect callbacks
+    self._onConnectCallbacks.forEach(function (cb) {
+      cb();
+    });
   });
   cocaineService.connect();
 };
@@ -173,16 +205,6 @@ Client.prototype.close = function () {
   if (!this._isExplicitCocaineClient) {
     this._cocaineClient.close();
   }
-};
-
-/**
- * Create stream for response
- * @param  {String} method                       Method name
- * @param  {String|Buffer|Number|Object} message Message for service
- * @return {Stream}                              Stream of response from service
- */
-Client.prototype.stream = function (method, message) {
-
   this._isConnected = false;
 };
 

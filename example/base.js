@@ -7,5 +7,12 @@ var iss = new Cocanode({
 
 iss.invoke('http', 'some message', function (err, response) {
   console.log(response);
+});
+
+// Or you can stream response
+var stream = iss.responseStream('http', 'give me a stream please');
+stream.pipe(process.stdout);
+
+stream.on('end', function () {
   iss.close();
 });

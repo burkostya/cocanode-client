@@ -33,6 +33,18 @@ Options:
     * err `Error` Error
     * response `Object` response from service
 
+### responseStream(method, message)
+
+  - method `String` Name of service method to invoke
+  - message `Mixed` Message for method
+
+  Returns response from service as Readable stream
+
+```js
+var water = service.responseStream('water', '200 gallons please');
+water.pipe(aquarium);
+```
+
 ### close()
 
   Closes connection to service in 30 sec because of cocaine internals.
@@ -48,8 +60,14 @@ var iss = new Cocanode({
 });
 
 iss.invoke('http', 'some message', function (err, response) {
-  console.log(err);
   console.log(response);
+});
+
+// Or you can stream response
+var stream = iss.responseStream('http', 'give me a stream please');
+stream.pipe(process.stdout);
+
+stream.on('end', function () {
   iss.close();
 });
 ```
