@@ -73,8 +73,8 @@ Client.prototype.invoke = function (method, message, done) {
   if (!self._isConnected) {
     debug('Connecting to cocaine from invoke');
     self._connect(function onConnectFromInvoke (err) {
-      debug('Connected to cocaine from invoke');
       if (err) { return done(err); }
+      debug('Connected to cocaine from invoke');
       self._invoke(method, message, done);
     });
   } else {
@@ -148,12 +148,15 @@ Client.prototype._invoke = function (method, message, done) {
  * @private
  */
 Client.prototype._connect = function (done) {
-  var cocaineService = this._cocaineService;
+  var self = this;
+
+  var cocaineService = self._cocaineService;
 
   function onCocaineServiceError (err) { return done(err); }
   cocaineService.once('error', onCocaineServiceError);
 
   cocaineService.once('connect', function onCocaineServiceConnect () {
+    self._isConnected = true;
     cocaineService.removeListener('error', onCocaineServiceError);
     done();
   });
@@ -180,6 +183,7 @@ Client.prototype.close = function () {
  */
 Client.prototype.stream = function (method, message) {
 
+  this._isConnected = false;
 };
 
 module.exports = Client;
