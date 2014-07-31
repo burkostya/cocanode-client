@@ -122,4 +122,9 @@ app.on('connect', function(){
 
 ### Development
 
-Use env `DEBUG=cocaine-client` for verbose mode
+Use env `DEBUG=cocanode-client` for verbose mode
+
+All debug variables:
+  - cocanode-client
+  - cocanode-client:responseStream
+  - cocanode-client:message
